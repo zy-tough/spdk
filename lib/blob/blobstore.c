@@ -1449,6 +1449,7 @@ _spdk_bs_dev_destroy(void *io_device)
 		_spdk_blob_free(blob);
 	}
 
+	spdk_bit_array_free(&bs->used_blobids);
 	spdk_bit_array_free(&bs->used_md_pages);
 	spdk_bit_array_free(&bs->used_clusters);
 	/*
@@ -1537,12 +1538,14 @@ _spdk_bs_alloc(struct spdk_bs_dev *dev, struct spdk_bs_opts *opts)
 
 	/* The metadata is assumed to be at least 1 page */
 	bs->used_md_pages = spdk_bit_array_create(1);
+	bs->used_blobids = spdk_bit_array_create(1);
 
 	spdk_io_device_register(bs, _spdk_bs_channel_create, _spdk_bs_channel_destroy,
 				sizeof(struct spdk_bs_channel));
 	rc = spdk_bs_register_md_thread(bs);
 	if (rc == -1) {
 		spdk_io_device_unregister(bs, NULL);
+		spdk_bit_array_free(&bs->used_blobids);
 		spdk_bit_array_free(&bs->used_md_pages);
 		spdk_bit_array_free(&bs->used_clusters);
 		free(bs);
@@ -2252,6 +2255,16 @@ spdk_bs_init(struct spdk_bs_dev *dev, struct spdk_bs_opts *o,
 	ctx->super->md_start = bs->md_start = num_md_pages;
 	ctx->super->md_len = bs->md_len;
 	num_md_pages += bs->md_len;
+
+	/* The used_blobids mask requires 1 bit per cluster, rounded
+	 * up to the nearest page, plus a header.
+	 */
+	ctx->super->used_blobid_mask_start = num_md_pages;
+	ctx->super->used_blobid_mask_len = divide_round_up(sizeof(struct spdk_bs_md_mask) +
+					   divide_round_up(bs->total_clusters, 8),
+					   SPDK_BS_PAGE_SIZE);
+	num_md_pages += ctx->super->used_blobid_mask_len;
+
 	num_md_lba = _spdk_bs_page_to_lba(bs, num_md_pages);
 
 	ctx->super->crc = _spdk_blob_md_page_calc_crc(ctx->super);
