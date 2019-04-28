@@ -465,6 +465,8 @@ ftl_band_head_md_ppa(struct ftl_band *band)
 void
 ftl_band_set_state(struct ftl_band *band, enum ftl_band_state state)
 {
+	SPDK_DAPULOG("Set band (%d) state from %d to %d.\n, ", band->id, band->state, state);
+	
 	switch (state) {
 	case FTL_BAND_STATE_FREE:
 		_ftl_band_set_free(band);
@@ -481,7 +483,7 @@ ftl_band_set_state(struct ftl_band *band, enum ftl_band_state state)
 	default:
 		break;
 	}
-
+	
 	band->state = state;
 }
 

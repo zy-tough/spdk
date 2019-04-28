@@ -1066,6 +1066,11 @@ ftl_submit_write(struct ftl_wptr *wptr, struct ftl_io *io)
 	int			rc = 0;
 	size_t			lbk_cnt;
 
+/*
+	SPDK_DAPULOG("Begin ftl_submit_write, iov_cnt %lu,"
+			     "wptr: grp:%d, pu:%d, chunk:%d, lbk:%u\n", io->iov_cnt, 
+				 wptr->ppa.grp, wptr->ppa.pu, wptr->ppa.chk, wptr->ppa.lbk);
+*/
 	while (io->iov_pos < io->iov_cnt) {
 		lbk_cnt = iov[io->iov_pos].iov_len / PAGE_SIZE;
 		assert(iov[io->iov_pos].iov_len > 0);

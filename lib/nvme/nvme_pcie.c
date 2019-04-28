@@ -1251,6 +1251,12 @@ nvme_pcie_qpair_submit_tracker(struct spdk_nvme_qpair *qpair, struct nvme_tracke
 	req = tr->req;
 	assert(req != NULL);
 
+/*
+	SPDK_DAPULOG("++++++++ lba %llx, len: %d\n",
+			((unsigned long long)req->cmd.cdw11 << 32) + req->cmd.cdw10,
+			(req->cmd.cdw12 & 0xFFFF) + 1);
+*/
+
 	/* Copy the command from the tracker to the submission queue. */
 	nvme_pcie_copy_command(&pqpair->cmd[pqpair->sq_tail], &req->cmd);
 
@@ -1279,6 +1285,12 @@ nvme_pcie_qpair_complete_tracker(struct spdk_nvme_qpair *qpair, struct nvme_trac
 	req = tr->req;
 
 	assert(req != NULL);
+
+/*
+	SPDK_DAPULOG("-----lba %llx, len: %d\n",
+			((unsigned long long)req->cmd.cdw11 << 32) + req->cmd.cdw10,
+			(req->cmd.cdw12 & 0xFFFF) + 1);
+*/
 
 	error = spdk_nvme_cpl_is_error(cpl);
 	retry = error && nvme_completion_is_retry(cpl) &&

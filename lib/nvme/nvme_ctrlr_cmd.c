@@ -481,10 +481,12 @@ spdk_nvme_ctrlr_cmd_get_log_page(struct spdk_nvme_ctrlr *ctrlr, uint8_t log_page
 
 	nvme_robust_mutex_lock(&ctrlr->ctrlr_lock);
 
-	if (offset && !ctrlr->cdata.lpa.edlp) {
+	/*
+	 * if (offset && !ctrlr->cdata.lpa.edlp) {
 		nvme_robust_mutex_unlock(&ctrlr->ctrlr_lock);
 		return -EINVAL;
 	}
+	*/
 
 	req = nvme_allocate_request_user_copy(ctrlr->adminq,
 					      payload, payload_size, cb_fn, cb_arg, false);

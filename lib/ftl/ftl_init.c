@@ -215,7 +215,7 @@ ftl_get_chunk_state(const struct spdk_ocssd_chunk_information_entry *info)
 		return FTL_CHUNK_STATE_BAD;
 	}
 
-	assert(0 && "Invalid block state");
+	//assert(0 && "Invalid block state");
 	return FTL_CHUNK_STATE_BAD;
 }
 
@@ -818,6 +818,8 @@ spdk_ftl_dev_init(const struct spdk_ftl_dev_init_opts *opts, spdk_ftl_init_fn cb
 {
 	struct spdk_ftl_dev *dev;
 
+	SPDK_DAPULOG("####dapu enter spdk_ftl_dev_init\n");
+
 	dev = calloc(1, sizeof(*dev));
 	if (!dev) {
 		return -ENOMEM;
@@ -852,10 +854,14 @@ spdk_ftl_dev_init(const struct spdk_ftl_dev_init_opts *opts, spdk_ftl_init_fn cb
 		goto fail_sync;
 	}
 
+	SPDK_DAPULOG("####dapu begin ftl_dev_nvme_init\n");
+
 	if (ftl_dev_nvme_init(dev, opts)) {
 		SPDK_ERRLOG("Unable to initialize NVMe structures\n");
 		goto fail_sync;
 	}
+
+	SPDK_DAPULOG("####dapu enter ftl_dev_retrieve_geo\n");
 
 	/* In case of errors, we free all of the memory in ftl_dev_free_sync(), */
 	/* so we don't have to clean up in each of the init functions. */
@@ -864,25 +870,35 @@ spdk_ftl_dev_init(const struct spdk_ftl_dev_init_opts *opts, spdk_ftl_init_fn cb
 		goto fail_sync;
 	}
 
+	SPDK_DAPULOG("####dapu enter ftl_check_init_opts\n");
+	
 	if (ftl_check_init_opts(opts, &dev->geo)) {
 		SPDK_ERRLOG("Invalid device configuration\n");
 		goto fail_sync;
 	}
+
+	SPDK_DAPULOG("####dapu enter ftl_dev_init_punits\n");
 
 	if (ftl_dev_init_punits(dev)) {
 		SPDK_ERRLOG("Unable to initialize LUNs\n");
 		goto fail_sync;
 	}
 
+	SPDK_DAPULOG("####dapu enter ftl_init_wptr_list\n");
+
 	if (ftl_init_wptr_list(dev)) {
 		SPDK_ERRLOG("Unable to init wptr\n");
 		goto fail_sync;
 	}
 
+	SPDK_DAPULOG("####dapu enter ftl_init_bands\n");
+
 	if (ftl_dev_init_bands(dev)) {
 		SPDK_ERRLOG("Unable to initialize band array\n");
 		goto fail_sync;
 	}
+
+	SPDK_DAPULOG("####dapu enter ftl_rwb_init\n");
 
 	dev->rwb = ftl_rwb_init(&dev->conf, dev->geo.ws_opt, dev->md_size);
 	if (!dev->rwb) {
@@ -890,16 +906,22 @@ spdk_ftl_dev_init(const struct spdk_ftl_dev_init_opts *opts, spdk_ftl_init_fn cb
 		goto fail_sync;
 	}
 
+	SPDK_DAPULOG("####dapu enter ftl_reloc_init\n");
+
 	dev->reloc = ftl_reloc_init(dev);
 	if (!dev->reloc) {
 		SPDK_ERRLOG("Unable to initialize reloc structures\n");
 		goto fail_sync;
 	}
 
+	SPDK_DAPULOG("####dapu enter ftl_dev_init_threads\n");
+
 	if (ftl_dev_init_threads(dev, opts)) {
 		SPDK_ERRLOG("Unable to initialize device threads\n");
 		goto fail_sync;
 	}
+
+	SPDK_DAPULOG("####dapu setup or restore ftl state\n");
 
 	if (opts->mode & SPDK_FTL_MODE_CREATE) {
 		if (ftl_setup_initial_state(dev)) {
@@ -913,6 +935,8 @@ spdk_ftl_dev_init(const struct spdk_ftl_dev_init_opts *opts, spdk_ftl_init_fn cb
 			goto fail_async;
 		}
 	}
+
+	SPDK_DAPULOG("####dapu Successfully initialize SPDK-FTL.\n");
 
 	return 0;
 fail_sync:
